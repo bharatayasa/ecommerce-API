@@ -1,45 +1,31 @@
 const express = require('express')
+const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
-const connection = require('./config/db');
+const sequelize = require('./config/db');
+const User = require('./models/users');
 
 const app = express();
+app.use(bodyParser.json());
 dotenv.config();
+
+// Synchronize all models
+sequelize.sync().then(() => {
+        console.log('Database & tables created!');
+    });
 
 app.get('/', (req, res) => {
     res.send("jalan wid")
 })
 
-app.get('/products', async(req, res) => {
-    const sql = "SELECT * FROM products"; 
-
+// Read all Products
+app.get('/users', async (req, res) => {
     try {
-        const data = await new Promise((resolve, reject) => {
-            connection.query(sql, (error, result) => {
-                if (error) {
-                    reject(error)
-                }
-                resolve(result)
-            })
-        })
-        
-        if (data.length === 0) {
-            return res.status(404).json({
-                message: "data not found", 
-                data: data
-            })
-        }
-        
-        return res.status(200).json({
-            message: "success to get data", 
-            data: data
-        })
+        const products = await User.findAll();
+        res.status(200).json(products);
     } catch (error) {
-        return res.status(500).json({
-            message: "internal server error", 
-            error: error
-        })
+        res.status(500).json({ error: error.message });
     }
-})
+});
 
 const port = process.env.PORT
 const host = process.env.HOST
